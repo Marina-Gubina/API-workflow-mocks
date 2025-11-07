@@ -1,0 +1,21 @@
+{
+	"id": "dd3ed153-0c77-42ea-8b3d-145256110ffb",
+	"name": "task-creation-mock",
+	"values": [
+		{
+			"key": "baseURL",
+			"value": "https://c6098204-ae64-4863-847b-bab2225d092b.mock.pstmn.io",
+			"type": "text",
+			"enabled": true
+		},
+		{
+			"key": "id_token",
+			"value": "",
+			"type": "any",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2025-11-07T07:21:36.972Z",
+	"_postman_exported_using": "Postman/11.70.5"
+}
