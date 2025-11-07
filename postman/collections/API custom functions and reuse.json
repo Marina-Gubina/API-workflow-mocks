@@ -1,0 +1,513 @@
+{
+	"info": {
+		"_postman_id": "6a56357b-e63d-4971-abac-a8f280c4286d",
+		"name": "API custom functions and reuse",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "40916907-6a56357b-e63d-4971-abac-a8f280c4286d"
+	},
+	"item": [
+		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonData = pm.response.json();\r",
+							"pm.environment.set(\"id_token\", jsonData.id_token)",
+							"pm.test('Response status code is 200', function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"})",
+							"",
+							"pm.test('Response contains the required field \\'id_token\\'', function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object').that.includes.all.keys('id_token');",
+							"})",
+							"",
+							"pm.test('The id_token must be a non-empty string', function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.id_token).to.exist.and.to.be.a('string').and.to.have.lengthOf.at.least(1, 'id_token should not be empty');",
+							"})",
+							"",
+							"pm.test('Content-Type is application/json', function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.equal('application/json');",
+							"})"
+						],
+						"type": "text/javascript",
+						"id": "591279f4-47cc-45c2-85f4-0bcdc7f804f3"
+					}
+				}
+			],
+			"id": "36d80c84-81e3-41cf-8f4c-c111ce9b1cd7",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"{{username}}\",\r\n    \"password\": \"{{password}}\",\r\n    \"rememberMe\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/authenticate",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get tasks list",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "68729637-668c-4a7a-91c5-37d02fb9f35f",
+						"exec": [
+							"let jsonData = pm.response.json();",
+							"",
+							"console.log(jsonData.length)",
+							"",
+							"console.log(jsonData[jsonData.length-1].id)",
+							"let id = jsonData[jsonData.length-1].id",
+							"pm.environment.set(\"task_id\", id)",
+							"",
+							"pm.environment.set(\"ids\", [])",
+							"",
+							"let currentAmountOfTasks = jsonData.length",
+							"",
+							"pm.environment.set(\"currentAmountOfTasks\", currentAmountOfTasks)",
+							"pm.environment.set(\"targetNumberOfTasks\", currentAmountOfTasks + 5)",
+							"",
+							"if (currentAmountOfTasks < pm.environment.get(\"targetNumberOfTasks\")) {",
+							"    pm.execution.setNextRequest(\"create a task\")",
+							"} else {",
+							"    pm.execution.setNextRequest(\"change a task\")",
+							"}",
+							"",
+							"",
+							"pm.test('Response Status Code is 200', function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"})",
+							"",
+							"pm.test('Response is an array with at least one element', function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('array').that.is.not.empty;",
+							"})",
+							"",
+							"pm.test('Response contains required fields', function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('array').that.is.not.empty;",
+							"    responseData.forEach(task => {",
+							"        pm.expect(task).to.be.an('object').that.has.all.keys('id', 'text', 'answer', 'title');",
+							"    });",
+							"})",
+							"",
+							"pm.test('ID is a non-negative integer', function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('array');",
+							"    responseData.forEach(task => {",
+							"        pm.expect(task).to.have.property('id');",
+							"        pm.expect(task.id).to.be.a('number').and.to.be.at.least(0);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"id": "c814832e-145d-4da6-b8ac-1629e1afbd39",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w"
+					}
+				],
+				"url": {
+					"raw": "{{baseURL}}/tasks?page=0&size=500",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"tasks"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "500"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X 'GET' \\\r\n  'https://sqlverifier-live-6e21ca0ed768.herokuapp.com/api/tasks?page=0&size=20' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w'"
+			},
+			"response": []
+		},
+		{
+			"name": "create a task",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f3b9ab56-d0f1-42d1-a379-471ff3d675bb",
+						"exec": [
+							"let jsonData = pm.response.json();\r",
+							"\r",
+							"eval(pm.environment.get(\"checkResponseStatusAndKey\"))\r",
+							"\r",
+							"pm.test(\"Response code and id property is 201 and exist\", function () {\r",
+							"    checkResponseStatusAndKey(201, \"id\")\r",
+							"});\r",
+							"\r",
+							"pm.environment.set(\"task_id\", jsonData.id)\r",
+							"\r",
+							"const ids = pm.environment.get(\"ids\")\r",
+							"console.log(\"jsonData.id is \" + jsonData.id) \r",
+							"ids.push(jsonData.id)\r",
+							"console.log(ids)\r",
+							"pm.environment.set(\"ids\", ids)\r",
+							"\r",
+							"let currentAmountOfTasks = pm.environment.get(\"currentAmountOfTasks\")\r",
+							"currentAmountOfTasks++;\r",
+							"pm.environment.set(\"currentAmountOfTasks\", currentAmountOfTasks)\r",
+							"\r",
+							"if (currentAmountOfTasks < pm.environment.get(\"targetNumberOfTasks\")) {\r",
+							"    pm.execution.setNextRequest(\"create a task\")\r",
+							"} else {\r",
+							"    pm.execution.setNextRequest(\"change a task\")\r",
+							"}\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "bade9e84-c4b3-4a61-9b9e-a5db8fcb9610",
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"id": "0afc0172-b7d5-479c-9d0d-4e17c0a423a6",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"text\": \"some task\",\r\n  \"answer\": \"string\",\r\n  \"title\": \"string\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/tasks",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"tasks"
+					]
+				},
+				"description": "Generated from cURL: curl -X 'POST' \\\r\n  'https://sqlverifier-live-6e21ca0ed768.herokuapp.com/api/tasks' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w' \\\r\n  -d '{\r\n  \"text\": \"string\",\r\n  \"answer\": \"string\",\r\n  \"title\": \"string\"\r\n}'"
+			},
+			"response": []
+		},
+		{
+			"name": "change a task",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response contains required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData).to.have.all.keys('id', 'text', 'answer', 'title');",
+							"});",
+							"",
+							"",
+							"pm.test(\"Id must be a positive integer\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.id).to.exist.and.to.be.a('number').and.to.be.above(0, \"Id should be a positive integer\");",
+							"});",
+							"",
+							"",
+							"pm.test(\"Text must be a non-empty string\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.text).to.exist.and.to.be.a('string').and.to.have.lengthOf.at.least(1, \"Text should not be empty\");",
+							"});",
+							"",
+							"",
+							"pm.test(\"Title is a non-empty string\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.title).to.exist.and.to.be.a('string').and.to.have.lengthOf.at.least(1, \"Title should not be empty\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"id": "22f53237-6838-48af-8d5d-5c7cb6593abe"
+					}
+				}
+			],
+			"id": "635f9c27-17f2-4ffd-a3f0-d43c2e0e4ca2",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": {{task_id}},\r\n    \"text\": \"some new task\",\r\n    \"answer\": \"string\",\r\n    \"title\": \"string\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/tasks/{{task_id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"tasks",
+						"{{task_id}}"
+					]
+				},
+				"description": "Generated from cURL: curl -X 'PATCH' \\\r\n  'https://sqlverifier-live-6e21ca0ed768.herokuapp.com/api/tasks/158880' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w' \\\r\n  -d '{\r\n  \r\n \"id\": 158880,\r\n  \"text\": \"some new task\",\r\n  \"answer\": \"string\",\r\n  \"title\": \"string\"\r\n  \r\n}'"
+			},
+			"response": []
+		},
+		{
+			"name": "get a task",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "79dfe4f7-e474-467c-8246-05ebe12713cd",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"let jsonData = pm.response.json();\r",
+							"pm.environment.set(\"task_id\", jsonData.id)\r",
+							"\r",
+							"let arr = pm.environment.get(\"ids\")\r",
+							"\r",
+							"arr.forEach((id)=> {\r",
+							"\r",
+							"    pm.sendRequest({\r",
+							"        url: `https://sqlverifier-live-6e21ca0ed768.herokuapp.com/api/tasks/${id}`,\r",
+							"        method: 'DELETE',\r",
+							"        header: {\r",
+							"            'accept': '*/*',\r",
+							"            'Authorization': 'Bearer ' + pm.environment.get(\"id_token\")\r",
+							"        }}, \r",
+							"        function (err, response) {\r",
+							"        console.log(response);\r",
+							"    });\r",
+							"\r",
+							"})\r",
+							"\r",
+							"//pm.environment.unset(\"task_id\")\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"id": "4400dfd3-a9c5-4483-9328-4c3cc3c8f7cd",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w"
+					}
+				],
+				"url": {
+					"raw": "{{baseURL}}/tasks/{{task_id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"tasks",
+						"{{task_id}}"
+					]
+				},
+				"description": "Generated from cURL: curl -X 'GET' \\\r\n  'https://sqlverifier-live-6e21ca0ed768.herokuapp.com/api/tasks/158880' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXJpbmFfbWciLCJleHAiOjE3NjI0MzcyMTEsImF1dGgiOiJST0xFX0FETUlOIiwiaWF0IjoxNzYyMzUwODExfQ.Je70NeoMt2pRuYXfLgKeggLi7rO_UeRwxsTDbCgvij4JxA-bGUzByhPcYuKC689aavDm1lXIbcZiidKsJv6m5w'"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{id_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "18a82ace-c1ba-4a5a-9fa4-4c2a1c3bb5d4",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					"function checkResponseStatusAndKey(expectedStatus, expectedKey){\r",
+					"    pm.response.to.have.status(expectedStatus);\r",
+					"    pm.expect(jsonData).to.have.property(expectedKey);\r",
+					"}\r",
+					"\r",
+					"pm.environment.set(\"checkResponseStatusAndKey\", checkResponseStatusAndKey.toString())"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "1b753422-8cac-4efb-ba12-a1108092794e",
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Validate response status code",
+					"pm.test(\"Status code is 200 or 201\", function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+					"});",
+					"",
+					"// Validate response Content-Type header",
+					"pm.test(\"Content-Type is application/json\", function () {",
+					"    pm.response.to.have.header(\"Content-Type\");",
+					"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+					"});",
+					"",
+					"// Validate response body structure and key fields (for PATCH update task)",
+					"if (pm.response.code === 200) {",
+					"    let jsonData;",
+					"    pm.test(\"Response has a valid JSON body\", function () {",
+					"        pm.expect(function () {",
+					"            jsonData = pm.response.json();",
+					"        }).not.to.throw();",
+					"    });",
+					"}",
+					"",
+					"// Validate Authorization header is present in request",
+					"pm.test(\"Authorization header is present in request\", function () {",
+					"    pm.expect(pm.request.headers.has(\"Authorization\")).to.be.true;",
+					"});",
+					"",
+					"// Validate request body for PATCH (if present)",
+					"if (pm.request.method === \"PATCH\") {",
+					"    pm.test(\"Request body contains required fields for update\", function () {",
+					"        let reqBody = {};",
+					"        try {",
+					"            reqBody = JSON.parse(pm.request.body.raw);",
+					"        } catch (e) {}",
+					"        pm.expect(reqBody).to.have.property(\"id\");",
+					"        pm.expect(reqBody).to.have.property(\"text\");",
+					"        pm.expect(reqBody).to.have.property(\"answer\");",
+					"        pm.expect(reqBody).to.have.property(\"title\");",
+					"    });",
+					"}",
+					""
+				]
+			}
+		}
+	]
+}
